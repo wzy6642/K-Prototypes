@@ -1,2 +1,2 @@
-# k_prototypes
-改进的k-prototypes聚类算法
+# K-Prototypes
+改进的K-Prototypes聚类算法
