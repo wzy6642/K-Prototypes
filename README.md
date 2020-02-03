@@ -17,7 +17,7 @@ label, n_center, c_center = K_Prototypes(random_seed=2020, data=data, num_numeri
 | num_numerical | int | 数值特征个数 |
 | num_category | int | 类别特征个数 |
 | max_iters | int | 最大迭代次数 |
-| mode | int | 计算模式：1-K_Modes，2-K_Means，其他-K_Prototypes |
+| mode | int | 计算模式：1: K_Modes，2: K_Means，其他值: K_Prototypes |
 
 ## 返回值说明：
 | 参数名称 | 参数类型 | 参数意义 |
