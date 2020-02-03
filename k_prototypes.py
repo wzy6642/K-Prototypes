@@ -12,7 +12,7 @@ from sklearn.manifold import TSNE
 from kmodes.kprototypes import KPrototypes
 
 
-DEMO = False
+DEMO = True
 N = 5
 
 
@@ -52,7 +52,7 @@ def Load_Data(demo=DEMO):
                          'INT_LOG', 'INT_IDEO', 'INT_MISC', 'INT_ANY', 'iyear', 'imonth', 'iday', ]
     data = data[numerical_features+category_features]
     if demo:
-        num_data = 1000
+        num_data = 300
         data = data[:num_data]
         data_id = data_id[:num_data]
     numerical_data = data[numerical_features]
@@ -65,7 +65,7 @@ def Load_Data(demo=DEMO):
     return data, data_id, len(numerical_features), len(category_features)
 
 
-def Calculate_Distance(num_data, cat_data, num_center, cat_center, alpha, belta):
+def Calculate_Single_Distance(num_data, cat_data, num_center, cat_center):
     """
     计算两个样本之间的距离
 
@@ -86,13 +86,14 @@ def Calculate_Distance(num_data, cat_data, num_center, cat_center, alpha, belta)
         
     Returns
     -------
-    distance : float
-        两个样本点之间的组合距离
+    euclidean : float
+        两个样本点之间的欧几里得距离
+    hamming : float
+        两个样本点之间的汉明距离
     """
     euclidean = np.linalg.norm(np.array(num_data)-np.array(num_center))
     hamming = np.shape(np.nonzero(np.array(cat_data)-np.array(cat_center))[0])[0]
-    distance = alpha*euclidean+belta*hamming
-    return distance
+    return euclidean, hamming
     
 
 def Calculate_Center(data, n, num_numerical, num_category):
@@ -194,12 +195,18 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
     label = []
     for i in range(len(data)):
         all_distance = []
+        euclidean = []
+        hamming = []
         for j in range(n):
-            distance = Calculate_Distance(numerical_data.iloc[[i]].values[0], 
-                                          category_data.iloc[[i]].values[0], 
-                                          init_center_numerical.iloc[[j]].values[0], 
-                                          init_center_category.iloc[[j]].values[0], 
-                                          alpha, belta)
+            sig_euclidean, sig_hamming = Calculate_Single_Distance(
+                numerical_data.iloc[[i]].values[0], 
+                category_data.iloc[[i]].values[0], 
+                init_center_numerical.iloc[[j]].values[0], 
+                init_center_category.iloc[[j]].values[0],)
+            euclidean.append(sig_euclidean)
+            hamming.append(sig_hamming)
+        for j in range(n):
+            distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
             all_distance.append(distance)
         label.append(np.argmin(np.array(all_distance)))
     data['label'] = label
@@ -212,12 +219,18 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
         newlabel = []
         for i in range(len(data)):
             all_distance = []
+            euclidean = []
+            hamming = []
             for j in range(n):
-                distance = Calculate_Distance(numerical_data.iloc[[i]].values[0], 
-                                              category_data.iloc[[i]].values[0], 
-                                              center_numerical.iloc[[j]].values[0], 
-                                              center_category.iloc[[j]].values[0], 
-                                              alpha, belta)
+                sig_euclidean, sig_hamming = Calculate_Single_Distance(
+                    numerical_data.iloc[[i]].values[0], 
+                    category_data.iloc[[i]].values[0], 
+                    center_numerical.iloc[[j]].values[0], 
+                    center_category.iloc[[j]].values[0],)
+                euclidean.append(sig_euclidean)
+                hamming.append(sig_hamming)
+            for j in range(n):
+                distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
                 all_distance.append(distance)
             newlabel.append(np.argmin(np.array(all_distance)))
         err_distance = np.shape(np.nonzero(np.array(list(data['label']))-np.array(newlabel))[0])[0]
