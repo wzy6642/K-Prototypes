@@ -1,5 +1,6 @@
 # K-Prototypes
-改进的K-Prototypes聚类算法
+改进的K-Prototypes聚类算法，参考文献[Determining the number of clusters using information entropy for mixed data](http://jiyeliang.net/Cms_Data/Contents/SXU_JYL/Folders/JournalPapers/~contents/BD5238EEQPQYXZPP/Determining%20the%20number%20of%20clusters%20using%20information%20entropy%20for%20mixed%20data(2012)PR.pdf)
+
 ## 使用方法：
 ```python
 from k_prototypes import K_Prototypes
