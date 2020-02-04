@@ -214,7 +214,7 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
     err_distance = 1
     iter_count = 0
     for iter_counts in range(max_iters):
-        print('INFO--当前为第{}次迭代'.format(iter_count))
+        print('INFO--当前为第{}次迭代'.format(iter_count+1))
         if err_distance!=0:
             iter_count += 1
             center_numerical, center_category = Calculate_Center(data, n, num_numerical, num_category)
