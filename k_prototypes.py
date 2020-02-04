@@ -236,11 +236,12 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
                     all_distance.append(distance)
                 newlabel.append(np.argmin(np.array(all_distance)))
             err_distance = np.shape(np.nonzero(np.array(list(data['label']))-np.array(newlabel))[0])[0]
+            print('loss: {}'.format(err_distance))
             data['label'] = newlabel
         else:
             break
-    print(data['label'].value_counts())
-    print('最终的迭代次数为：{}'.format(iter_count))
+    print('各类别的样本个数统计结果: {}'.format(data['label'].value_counts().values))
+    print('最终的迭代次数为: {}'.format(iter_count))
     data.drop('label', axis=1, inplace=True)
     return newlabel, center_numerical, center_category
     
