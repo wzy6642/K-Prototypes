@@ -91,7 +91,7 @@ def Calculate_Single_Distance(num_data, cat_data, num_center, cat_center):
     hamming : float
         两个样本点之间的汉明距离
     """
-    euclidean = np.linalg.norm(np.array(num_data)-np.array(num_center))
+    euclidean = np.linalg.norm(np.array(num_data)-np.array(num_center))**2
     hamming = np.shape(np.nonzero(np.array(cat_data)-np.array(cat_center))[0])[0]
     return euclidean, hamming
     
@@ -148,7 +148,7 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
     n : int
         聚类中心的个数
     data : DataFrame
-        被聚类的样本
+        用于聚类的样本
     random_seed : int 
         随机数种子
     num_numerical : int 
@@ -213,28 +213,32 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
     # 迭代更新聚类中心部分
     err_distance = 1
     iter_count = 0
-    while iter_count<=max_iters and err_distance!=0:
-        iter_count += 1
-        center_numerical, center_category = Calculate_Center(data, n, num_numerical, num_category)
-        newlabel = []
-        for i in range(len(data)):
-            all_distance = []
-            euclidean = []
-            hamming = []
-            for j in range(n):
-                sig_euclidean, sig_hamming = Calculate_Single_Distance(
-                    numerical_data.iloc[[i]].values[0], 
-                    category_data.iloc[[i]].values[0], 
-                    center_numerical.iloc[[j]].values[0], 
-                    center_category.iloc[[j]].values[0],)
-                euclidean.append(sig_euclidean)
-                hamming.append(sig_hamming)
-            for j in range(n):
-                distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
-                all_distance.append(distance)
-            newlabel.append(np.argmin(np.array(all_distance)))
-        err_distance = np.shape(np.nonzero(np.array(list(data['label']))-np.array(newlabel))[0])[0]
-        data['label'] = newlabel
+    for iter_counts in range(max_iters):
+        print('INFO--当前为第{}次迭代'.format(iter_count))
+        if err_distance!=0:
+            iter_count += 1
+            center_numerical, center_category = Calculate_Center(data, n, num_numerical, num_category)
+            newlabel = []
+            for i in range(len(data)):
+                all_distance = []
+                euclidean = []
+                hamming = []
+                for j in range(n):
+                    sig_euclidean, sig_hamming = Calculate_Single_Distance(
+                        numerical_data.iloc[[i]].values[0], 
+                        category_data.iloc[[i]].values[0], 
+                        center_numerical.iloc[[j]].values[0], 
+                        center_category.iloc[[j]].values[0],)
+                    euclidean.append(sig_euclidean)
+                    hamming.append(sig_hamming)
+                for j in range(n):
+                    distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
+                    all_distance.append(distance)
+                newlabel.append(np.argmin(np.array(all_distance)))
+            err_distance = np.shape(np.nonzero(np.array(list(data['label']))-np.array(newlabel))[0])[0]
+            data['label'] = newlabel
+        else:
+            break
     print(data['label'].value_counts())
     print('最终的迭代次数为：{}'.format(iter_count))
     data.drop('label', axis=1, inplace=True)
@@ -246,7 +250,7 @@ if __name__ == '__main__':
     label_1, center_numerical_1, center_category_1 = K_Prototypes(random_seed=2020, n=N, data=data, 
                                                             num_numerical=num_numerical_features, 
                                                             num_category=num_category_features, 
-                                                            max_iters = 10, mode=3)
+                                                            max_iters = 20, mode=3)
     print("K_Prototypes算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label_1)))
     label_2, center_numerical_2, center_category_2 = K_Prototypes(random_seed=2020, n=N, data=data, 
                                                             num_numerical=num_numerical_features, 
@@ -258,6 +262,7 @@ if __name__ == '__main__':
                                                             num_category=num_category_features, 
                                                             max_iters = 10, mode=1)
     print("K_Modes算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label_3)))
-    kp = KPrototypes(n_clusters=5, init='Huang', n_init=1, verbose=True, n_jobs=4, random_state=2020)
+    kp = KPrototypes(n_clusters=5, init='Huang', n_init=1, verbose=True, 
+                     n_jobs=4, random_state=2020, gamma=num_category_features/num_numerical_features)
     KPrototypes_results = kp.fit_predict(data, categorical=list(range(num_numerical_features, num_numerical_features+num_category_features-1)))
     print("K_Prototypes算法包的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, KPrototypes_results)))
