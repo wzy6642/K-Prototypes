@@ -3,9 +3,15 @@
 
 ## 使用方法：
 ```python
-from k_prototypes import K_Prototypes
-label, n_center, c_center = K_Prototypes(random_seed=2020, data=data, num_numerical=num_numerical_features,
-                                         num_category=num_category_features, max_iters=10, mode=3, n=N)
+import k_prototypes as kp
+data, data_id, num_numerical_features, num_category_features = kp.Load_Data(demo=True)
+label, center_numerical, center_category = kp.K_Prototypes(random_seed=2020, n=5, data=data, 
+                                                           num_numerical=num_numerical_features, 
+                                                           num_category=num_category_features, 
+                                                           max_iters = 10, mode=3)
+CUM = kp.CUM_index(data=data, num_category=num_category_features, 
+                   num_numerical=num_numerical_features, n=5, label=label, mode=3)
+print("K_Prototypes算法的CUM值为：{}".format(CUM))
 ```
 
 ## 参数说明：
