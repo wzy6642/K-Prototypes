@@ -16,6 +16,26 @@ CUM = kp.CUM_index(data=data, num_category=num_category_features,
                    num_numerical=num_numerical_features, n=5, label=label, mode=3)
 print("K_Prototypes算法的CUM值为：{}".format(CUM))
 ```
+## 控制台打印内容：
+```terminal
+INFO--当前为第1次迭代  loss: 120
+INFO--当前为第2次迭代  loss: 30
+INFO--当前为第3次迭代  loss: 35
+INFO--当前为第4次迭代  loss: 35
+INFO--当前为第5次迭代  loss: 20
+INFO--当前为第6次迭代  loss: 16
+INFO--当前为第7次迭代  loss: 10
+INFO--当前为第8次迭代  loss: 5
+INFO--当前为第9次迭代  loss: 3
+INFO--当前为第10次迭代 loss: 6
+INFO--当前为第11次迭代 loss: 3
+INFO--当前为第12次迭代 loss: 2
+INFO--当前为第13次迭代 loss: 1
+INFO--当前为第14次迭代 loss: 0
+INFO--当前为第15次迭代 各类别的样本个数统计结果: [101  94  64  60  43  38]
+最终的迭代次数为: 14
+K_Prototypes算法的CUM值为：3.0573724471832033
+```
 
 ## 参数说明：
 | 参数名称 | 参数类型 | 参数意义 |
