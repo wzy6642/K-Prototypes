@@ -7,7 +7,7 @@ import k_prototypes as kp
 # 导入示例数据
 data, data_id, num_numerical_features, num_category_features = kp.Load_Data(demo=True)
 # 聚类模型
-label, center_numerical, center_category = kp.K_Prototypes(random_seed=2020, n=5, data=data, 
+label, center_numerical, center_category = kp.K_Prototypes(random_seed=2020, n=6, data=data, 
                                                            num_numerical=num_numerical_features, 
                                                            num_category=num_category_features, 
                                                            max_iters = 10, mode=3)
