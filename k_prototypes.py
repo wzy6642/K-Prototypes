@@ -52,7 +52,7 @@ def Load_Data(demo=DEMO):
                          'INT_LOG', 'INT_IDEO', 'INT_MISC', 'INT_ANY', 'iyear', 'imonth', 'iday', ]
     data = data[numerical_features+category_features]
     if demo:
-        num_data = 1000
+        num_data = 400
         data = data[:num_data]
         data_id = data_id[:num_data]
     numerical_data = data[numerical_features]
@@ -219,7 +219,7 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
     err_distance = 1
     iter_count = 0
     for iter_counts in range(max_iters):
-        print('INFO--当前为第{}次迭代'.format(iter_count+1))
+        print('INFO--当前为第{}次迭代'.format(iter_count+1), end="\t")
         if err_distance!=0:
             iter_count += 1
             center_numerical, center_category = Calculate_Center(data, n, num_numerical, num_category)
@@ -368,19 +368,31 @@ def CUM_index(data, num_category, num_numerical, n, label, mode):
         
 if __name__ == '__main__':
     data, data_id, num_numerical_features, num_category_features = Load_Data()
-    label_1, center_numerical_1, center_category_1 = K_Prototypes(random_seed=2020, n=N, data=data, 
-                                                            num_numerical=num_numerical_features, 
-                                                            num_category=num_category_features, 
-                                                            max_iters = 10, mode=3)
-    CUM = CUM_index(data=data, num_category=num_category_features, 
-                    num_numerical=num_numerical_features, n=N, 
-                    label=label_1, mode=3)
-    print("K_Prototypes算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label_1)))
-    print("K_Prototypes算法的CUM值为：{}".format(CUM))
+    for n in range(2, 10):
+        print('聚为{}类'.format(n))
+        # 本文算法
+        label, center_numerical, center_category = K_Prototypes(random_seed=2020, n=n, data=data, 
+                                                                num_numerical=num_numerical_features, 
+                                                                num_category=num_category_features, 
+                                                                max_iters = 20, mode=3)
+        CUM = CUM_index(data=data, num_category=num_category_features, 
+                        num_numerical=num_numerical_features, n=n, 
+                        label=label, mode=3)
+        print("K_Prototypes算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label)))
+        print("K_Prototypes算法的CUM值为：{}".format(CUM))
+        # 开源包
+        kp = KPrototypes(n_clusters=n, init='Huang', n_init=1, verbose=True, 
+                         n_jobs=4, random_state=2020, gamma=num_category_features/num_numerical_features)
+        KPrototypes_results = kp.fit_predict(data, categorical=list(range(num_numerical_features, num_numerical_features+num_category_features-1)))
+        print("K_Prototypes算法包的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, KPrototypes_results)))
+        CUM = CUM_index(data=data, num_category=num_category_features, 
+                        num_numerical=num_numerical_features, n=n, 
+                        label=KPrototypes_results, mode=3)
+        print("K_Prototypes算法包的CUM值为：{}".format(CUM))
     label_2, center_numerical_2, center_category_2 = K_Prototypes(random_seed=2020, n=N, data=data, 
                                                             num_numerical=num_numerical_features+num_category_features, 
                                                             num_category=0, 
-                                                            max_iters = 10, mode=2)
+                                                            max_iters = 20, mode=2)
     CUM = CUM_index(data=data, num_category=0, 
                     num_numerical=num_numerical_features+num_category_features, n=N, 
                     label=label_2, mode=2)
@@ -389,17 +401,9 @@ if __name__ == '__main__':
     label_3, center_numerical_3, center_category_3 = K_Prototypes(random_seed=2020, n=N, data=data, 
                                                             num_numerical=0, 
                                                             num_category=num_numerical_features+num_category_features, 
-                                                            max_iters = 10, mode=1)
+                                                            max_iters = 20, mode=1)
     CUM = CUM_index(data=data, num_category=num_numerical_features+num_category_features, 
                     num_numerical=0, n=N, 
                     label=label_3, mode=1)
     print("K_Modes算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label_3)))
     print("K_Modes算法的CUM值为：{}".format(CUM))
-    kp = KPrototypes(n_clusters=5, init='Huang', n_init=1, verbose=True, 
-                     n_jobs=4, random_state=2020, gamma=num_category_features/num_numerical_features)
-    KPrototypes_results = kp.fit_predict(data, categorical=list(range(num_numerical_features, num_numerical_features+num_category_features-1)))
-    print("K_Prototypes算法包的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, KPrototypes_results)))
-    CUM = CUM_index(data=data, num_category=num_category_features, 
-                    num_numerical=num_numerical_features, n=N, 
-                    label=KPrototypes_results, mode=3)
-    print("K_Prototypes算法包的CUM值为：{}".format(CUM))
