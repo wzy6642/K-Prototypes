@@ -4,11 +4,14 @@
 ## 使用方法：
 ```python
 import k_prototypes as kp
+# 导入示例数据
 data, data_id, num_numerical_features, num_category_features = kp.Load_Data(demo=True)
+# 聚类模型
 label, center_numerical, center_category = kp.K_Prototypes(random_seed=2020, n=5, data=data, 
                                                            num_numerical=num_numerical_features, 
                                                            num_category=num_category_features, 
                                                            max_iters = 10, mode=3)
+# 模型评价
 CUM = kp.CUM_index(data=data, num_category=num_category_features, 
                    num_numerical=num_numerical_features, n=5, label=label, mode=3)
 print("K_Prototypes算法的CUM值为：{}".format(CUM))
