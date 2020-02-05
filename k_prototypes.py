@@ -8,8 +8,8 @@ import pandas as pd
 import numpy as np
 from sklearn import preprocessing
 from sklearn import metrics
-from sklearn.manifold import TSNE
 from kmodes.kprototypes import KPrototypes
+from copy import deepcopy
 
 
 DEMO = True
@@ -52,7 +52,7 @@ def Load_Data(demo=DEMO):
                          'INT_LOG', 'INT_IDEO', 'INT_MISC', 'INT_ANY', 'iyear', 'imonth', 'iday', ]
     data = data[numerical_features+category_features]
     if demo:
-        num_data = 300
+        num_data = 1000
         data = data[:num_data]
         data_id = data_id[:num_data]
     numerical_data = data[numerical_features]
@@ -206,7 +206,12 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
             euclidean.append(sig_euclidean)
             hamming.append(sig_hamming)
         for j in range(n):
-            distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
+            if sum(euclidean)==0:
+                distance = belta*hamming[j]/sum(hamming)
+            elif sum(hamming)==0:
+                distance = alpha*euclidean[j]/sum(euclidean)
+            else:
+                distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
             all_distance.append(distance)
         label.append(np.argmin(np.array(all_distance)))
     data['label'] = label
@@ -232,7 +237,12 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
                     euclidean.append(sig_euclidean)
                     hamming.append(sig_hamming)
                 for j in range(n):
-                    distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
+                    if sum(euclidean)==0:
+                        distance = belta*hamming[j]/sum(hamming)
+                    elif sum(hamming)==0:
+                        distance = alpha*euclidean[j]/sum(euclidean)
+                    else:
+                        distance = alpha*euclidean[j]/sum(euclidean)+belta*hamming[j]/sum(hamming)
                     all_distance.append(distance)
                 newlabel.append(np.argmin(np.array(all_distance)))
             err_distance = np.shape(np.nonzero(np.array(list(data['label']))-np.array(newlabel))[0])[0]
@@ -245,25 +255,151 @@ def K_Prototypes(random_seed, n, data, num_numerical, num_category, max_iters, m
     data.drop('label', axis=1, inplace=True)
     return newlabel, center_numerical, center_category
     
+    
+def CUM_index(data, num_category, num_numerical, n, label, mode):
+    """
+    计算CUM指标，用于对混合聚类模型的聚类效果评价，该指标越小越优
+    参考链接：https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/metrics/cluster/_unsupervised.py
+    Parameters
+    ----------
+    data : DataFrame
+        用于聚类的样本
+    num_numerical : int 
+        数值特征个数
+    num_category : int 
+        类别特征个数
+    n : int
+        聚类中心的个数
+    mode : int 
+        计算模式
 
+    Returns
+    -------
+    CUM : float
+        混合类别数据聚类结果性能度量指标
+    """
+    eval_data = deepcopy(data)
+    eval_data_numerical = eval_data.iloc[:, :num_numerical]
+    eval_data_numerical['label'] = label
+    eval_data_category = eval_data.iloc[:, num_numerical:]
+    eval_data_category['label'] = label
+    num_features = num_category+num_numerical
+    if mode==1:      # k-modes
+        alpha = 0
+        belta = 1
+    elif mode==2:    # k-means
+        alpha = 1
+        belta = 0
+    else:            # k-prototypes
+        alpha = num_numerical/num_features
+        belta = num_category/num_features
+    # 计算连续型特征部分的聚类分散度CUN，该指标越小越好
+    if num_numerical!=0:
+        sub_eval_data_numerical = []
+        center_numerical = []
+        for i in range(n):
+            sub_cluster_data = eval_data_numerical.loc[eval_data_numerical.label==i]
+            sub_cluster_data = sub_cluster_data[sub_cluster_data.columns[:-1]]
+            sub_eval_data_numerical.append(sub_cluster_data)
+            center_numerical.append(list(sub_cluster_data.mean(axis=0)))
+        center_numerical = pd.DataFrame(center_numerical)
+        center_numerical.columns = sub_cluster_data.columns
+        cluster_inner_distance = []
+        for i in range(n):
+            sub_data = sub_eval_data_numerical[i]
+            inner_distance = []
+            for j in range(len(sub_data)):
+                sub_inner_distance = np.linalg.norm(np.array(center_numerical.iloc[[i]].values[0])-
+                                                    np.array(sub_data.iloc[[j]].values[0]))
+                inner_distance.append(sub_inner_distance)
+            cluster_inner_distance.append(sum(inner_distance)/len(sub_data))
+        temp = 0
+        sub_dbi = []
+        for i in range(n):
+            inner_sub_dbi = []
+            for j in range(n):
+                if i!=j:
+                    temp = (cluster_inner_distance[i]+cluster_inner_distance[j])/np.linalg.norm(np.array(center_numerical.iloc[[i]].values[0])-
+                                                                                                np.array(center_numerical.iloc[[j]].values[0]))
+                inner_sub_dbi.append(temp)
+            sub_dbi.append(max(inner_sub_dbi))
+        CUN = sum(sub_dbi)/n
+    else:
+        CUN = 0
+    # 计算类别型特征部分的聚类分散度CUC，该指标越小越好
+    if num_category!=0:
+        sub_eval_data_category = []
+        center_category = []
+        for i in range(n):
+            sub_cluster_data = eval_data_category.loc[eval_data_category.label==i]
+            sub_cluster_data = sub_cluster_data[sub_cluster_data.columns[:-1]]
+            sub_eval_data_category.append(sub_cluster_data)
+            data_category_mod = []
+            for col in sub_cluster_data.columns:
+                data_category_mod.append(list(sub_cluster_data[col].mode())[0])
+            center_category.append(data_category_mod)
+        center_category = pd.DataFrame(center_category)
+        center_category.columns = sub_cluster_data.columns
+        cluster_inner_distance = []
+        for i in range(n):
+            sub_data = sub_eval_data_category[i]
+            inner_distance = []
+            for j in range(len(sub_data)):
+                sub_inner_distance = np.shape(np.nonzero(np.array(center_category.iloc[[i]].values[0])-
+                                                         np.array(sub_data.iloc[[j]].values[0]))[0])[0]
+                inner_distance.append(sub_inner_distance)
+            cluster_inner_distance.append(sum(inner_distance)/len(sub_data))
+        temp = 0
+        sub_dbi = []
+        for i in range(n):
+            inner_sub_dbi = []
+            for j in range(n):
+                if i!=j:
+                    temp = (cluster_inner_distance[i]+cluster_inner_distance[j])/np.shape(np.nonzero(np.array(center_category.iloc[[i]].values[0])-
+                                                                                                     np.array(center_category.iloc[[j]].values[0]))[0])[0]
+                inner_sub_dbi.append(temp)
+            sub_dbi.append(max(inner_sub_dbi))
+        CUC = sum(sub_dbi)/n
+    else:
+        CUC = 0
+    CUM = alpha*CUN+belta*CUC
+    return CUM
+    
+        
 if __name__ == '__main__':
     data, data_id, num_numerical_features, num_category_features = Load_Data()
     label_1, center_numerical_1, center_category_1 = K_Prototypes(random_seed=2020, n=N, data=data, 
                                                             num_numerical=num_numerical_features, 
                                                             num_category=num_category_features, 
-                                                            max_iters = 20, mode=3)
+                                                            max_iters = 10, mode=3)
+    CUM = CUM_index(data=data, num_category=num_category_features, 
+                    num_numerical=num_numerical_features, n=N, 
+                    label=label_1, mode=3)
     print("K_Prototypes算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label_1)))
+    print("K_Prototypes算法的CUM值为：{}".format(CUM))
     label_2, center_numerical_2, center_category_2 = K_Prototypes(random_seed=2020, n=N, data=data, 
-                                                            num_numerical=num_numerical_features, 
-                                                            num_category=num_category_features, 
+                                                            num_numerical=num_numerical_features+num_category_features, 
+                                                            num_category=0, 
                                                             max_iters = 10, mode=2)
+    CUM = CUM_index(data=data, num_category=0, 
+                    num_numerical=num_numerical_features+num_category_features, n=N, 
+                    label=label_2, mode=2)
     print("K_Means算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label_2)))
+    print("K_Means算法的CUM值为：{}".format(CUM))
     label_3, center_numerical_3, center_category_3 = K_Prototypes(random_seed=2020, n=N, data=data, 
-                                                            num_numerical=num_numerical_features, 
-                                                            num_category=num_category_features, 
+                                                            num_numerical=0, 
+                                                            num_category=num_numerical_features+num_category_features, 
                                                             max_iters = 10, mode=1)
+    CUM = CUM_index(data=data, num_category=num_numerical_features+num_category_features, 
+                    num_numerical=0, n=N, 
+                    label=label_3, mode=1)
     print("K_Modes算法的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, label_3)))
+    print("K_Modes算法的CUM值为：{}".format(CUM))
     kp = KPrototypes(n_clusters=5, init='Huang', n_init=1, verbose=True, 
                      n_jobs=4, random_state=2020, gamma=num_category_features/num_numerical_features)
     KPrototypes_results = kp.fit_predict(data, categorical=list(range(num_numerical_features, num_numerical_features+num_category_features-1)))
     print("K_Prototypes算法包的Calinski-Harabaz Index值为：{}".format(metrics.calinski_harabasz_score(data, KPrototypes_results)))
+    CUM = CUM_index(data=data, num_category=num_category_features, 
+                    num_numerical=num_numerical_features, n=N, 
+                    label=KPrototypes_results, mode=3)
+    print("K_Prototypes算法包的CUM值为：{}".format(CUM))
