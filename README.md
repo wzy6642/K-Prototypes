@@ -62,3 +62,6 @@ K_Prototypes算法的CUM值为：3.0573724471832033
 | K-Means算法 | 106/86/61/36/11 | 0.7589 |
 | K-Modes算法 | 72/65/57/55/51 | 1.6840 |
 | [开源包的K_Prototypes算法](https://github.com/nicodv/kmodes) | 67/65/61/54/53 | 0.7630 |
+
+## 数据地址：
+链接: https://pan.baidu.com/s/1910YyLGiEXJlZjBMo3nbAg 提取码: s9ir
