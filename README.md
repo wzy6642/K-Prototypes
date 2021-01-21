@@ -64,4 +64,4 @@ K_Prototypes算法的CUM值为：3.0573724471832033
 | [开源包的K_Prototypes算法](https://github.com/nicodv/kmodes) | 67/65/61/54/53 | 0.7630 |
 
 ## 数据地址：
-链接: https://pan.baidu.com/s/1910YyLGiEXJlZjBMo3nbAg 提取码: s9ir
+链接: https://pan.baidu.com/s/1dGE06ymsS-hYfazcqwUjqg 提取码: hdcg
